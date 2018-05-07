@@ -33,7 +33,9 @@ cv2.CV_LOAD_IMAGE_COLOR = 1
 class InferenceServer():
 	def __init__(self, sub_topic, pub_topic):
 		self.detec_graph, self.category = obj_det_fun.objdetect()
-		self.sess = tf.Session(graph = self.detec_graph)
+		self.config = tf.ConfigProto()
+		self.config.gpu_options.allow_growth = True
+		self.sess = tf.Session(config=self.config, graph = self.detec_graph)
 		rospy.loginfo('Tensorflow inference session successfully created!!')
 
 		self._sub_topic = sub_topic
