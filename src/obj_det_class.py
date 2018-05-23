@@ -19,9 +19,10 @@ from PIL import Image
 DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 
 class ObjectDetectionAPI():
-	def __init__(self, model_name = "ssd_inception_v2_coco_11_06_2017", path_to_the_model_database = "/TFM/model_database"):
+	def __init__(self, model_name = "ssd_inception_v2_coco_11_06_2017", path_to_the_model_database = "/TFM/model_database", path_to_tf_models = "/TFM/models"):
 		self.model_name = model_name
 		self.path_to_the_model_database = path_to_the_model_database
+		self.path_to_tf_models = path_to_tf_models
 
 		# This function looks for the models in the location MODEL_DATABASE, if not it downloads them over internet
 		# if they are standard models
@@ -58,6 +59,14 @@ class ObjectDetectionAPI():
 			    rospy.logwarn('Found and verified .pb file : ' +  self.path_to_the_inference_graph)	
 			    rospy.logwarn('Found the label_map file : ' +  os.path.basename(self.path_to_label_map_file))
 			    return
+		else:
+			self.path_to_label_map_file = os.path.join(self.path_to_tf_models, 'research/object_detection/data', 'mscoco_label_map.pbtxt')
+			self.path_to_the_inference_graph = os.path.join(path_to_the_model_database, model_name, 'frozen_inference_graph.pb')
+	    	if os.path.exists(self.path_to_the_inference_graph) and os.path.exists(self.path_to_label_map_file):
+			    rospy.logwarn('Found and verified .pb file : ' +  self.path_to_the_inference_graph)	
+			    rospy.logwarn('Found the label_map file : ' +  os.path.basename(self.path_to_label_map_file))
+			    return
+
 		if os.path.exists(self.model_file):
 		    rospy.logwarn('Found and verified : ' +  self.model_file)
 		    tar_file = tarfile.open(self.model_file)
