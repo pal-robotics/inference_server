@@ -1,7 +1,0 @@
----
-sensor_msgs/CompressedImage image
-int16 num_detections
-string[] classes
-float32[] scores
-sensor_msgs/RegionOfInterest[] bouding_boxes
----

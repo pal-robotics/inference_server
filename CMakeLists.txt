@@ -51,10 +51,9 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  BoundingBox.msg
-)
+#add_message_files(
+#  FILES
+#)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -67,7 +66,6 @@ add_message_files(
 add_action_files(DIRECTORY action
    FILES
    Inference.action
-   InferenceAdvanced.action
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -99,11 +97,6 @@ include_directories(
 
 install(PROGRAMS
   src/inference_server_node.py
-  src/inference_advanced_server_node.py
-  src/inference_advanced_server_node_class.py
-  src/obj_det_fun.py
-  src/obj_det_class.py
-  src/obj_det_fun_advanced.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
