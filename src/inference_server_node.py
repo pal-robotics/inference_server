@@ -87,7 +87,7 @@ class InferenceServer():
 			box.x_offset = detected_boxes[i][1]
 			box.width = (detected_boxes[i][3] - detected_boxes[i][1])
 			box.do_rectify = True
-			result.bouding_boxes.append(box)
+			result.bounding_boxes.append(box)
 
 		try:
 			self._as.set_succeeded(result)
