@@ -10,6 +10,7 @@ This package is a wrapper between ROS and the Tensorflow Object Detection API. T
 ## ROS API
 ### actions
    * Inference.action
+   
    ```
 	---
 	sensor_msgs/CompressedImage image
@@ -25,11 +26,11 @@ This package is a wrapper between ROS and the Tensorflow Object Detection API. T
  ```
 rosrun inference_server inference_server_node.py
  ```
- * To run inference on the image published from the robot, run the action_client and send the goal using the following command:
+  * To run inference on the image published from the robot, run the action_client and send the goal using the following command:
 ```
 rosrun actionlib axclient.py /inference_server inference_server/InferenceAction inference_server/InferenceAction
 ```
-* Receive the result with the following fields from the inference of the image, in a chronological order of the detection score.
+  * Receive the result with the following fields from the inference of the image, in a chronological order of the detection score.
 	* image - Resultant image after inference from Object Detection API
 	* num_detections - Number of detected objects in the inference image
 	* classes - name of the class to which the object belongs (depends on the model used for the inference)
