@@ -1,7 +1,6 @@
-
 # inference_server
 
-This package is a wrapper between ROS and the Tensorflow Object Detection API. The Tensorflow Object Detection API is an open source framework built on top of TensorFlow that makes it easy to construct, train and deploy object detection models. This package helps us to use the object detection along with ROS in the form of an action_server. 
+This package is a wrapper between ROS and the [Tensorflow Object Detection API](https://github.com/tensorflow/models/tree/master/research/object_detection). The Tensorflow Object Detection API is an open source framework built on top of TensorFlow that makes it easy to construct, train and deploy object detection models. This package helps us to use the object detection along with ROS in the form of an action_server. 
 
 ## Features:
    * ROS-TensorFlow Object Detection API Wrapper
