@@ -69,8 +69,8 @@ class ObjectDetectionAPI():
 		    rospy.logwarn('The model is not available at the model database location: '+ self.model_file)
 		    rospy.logwarn('Attempting to download over internet:' + model_name + file_suffix) 
 		    opener = urllib.request.URLopener()
-		    opener.retrieve(DOWNLOAD_BASE + model_name + file_suffix, model_name + file_suffix)
-		    rospy.logwarn('\nDownload Complete!')
+		    opener.retrieve(DOWNLOAD_BASE + model_name + file_suffix, self.model_file)
+		    rospy.logwarn('Download Complete!\n')
 		    tar_file = tarfile.open(self.model_file)
 
 		# Getting the config yaml
