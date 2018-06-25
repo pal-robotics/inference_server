@@ -26,6 +26,8 @@ class ObjectDetectionAPI():
 		# Loads the detection graph and the category index from the extracted info from the look_for_the_model method
 		self.load_detection_graph_and_category_index()
 
+		self.required_classes = []
+
 		# This config helps to run the tensorflow without having some memory issues
 		# For instance, when cuda is not able to allocate some memory.
 		self.config = tf.ConfigProto()
@@ -51,27 +53,27 @@ class ObjectDetectionAPI():
 				self.path_to_the_inference_graph = os.path.join(path_to_the_model_database, model_name, config_data["inference_graph"])
 
 			if os.path.exists(self.path_to_the_inference_graph) and os.path.exists(self.path_to_label_map_file):
-			    rospy.logwarn('Found and verified .pb file : ' +  self.path_to_the_inference_graph)	
-			    rospy.logwarn('Found the label_map file : ' +  os.path.basename(self.path_to_label_map_file))
-			    return
+				rospy.logwarn('Found and verified .pb file : ' +  self.path_to_the_inference_graph)	
+				rospy.logwarn('Found the label_map file : ' +  os.path.basename(self.path_to_label_map_file))
+				return
 		else:
 			self.path_to_label_map_file = os.path.join(self.path_to_tf_models, 'research/object_detection/data', 'mscoco_label_map.pbtxt')
 			self.path_to_the_inference_graph = os.path.join(path_to_the_model_database, model_name, 'frozen_inference_graph.pb')
-	    	if os.path.exists(self.path_to_the_inference_graph) and os.path.exists(self.path_to_label_map_file):
-			    rospy.logwarn('Found and verified .pb file : ' +  self.path_to_the_inference_graph)	
-			    rospy.logwarn('Found the label_map file : ' +  os.path.basename(self.path_to_label_map_file))
-			    return
+			if os.path.exists(self.path_to_the_inference_graph) and os.path.exists(self.path_to_label_map_file):
+				rospy.logwarn('Found and verified .pb file : ' +  self.path_to_the_inference_graph)	
+				rospy.logwarn('Found the label_map file : ' +  os.path.basename(self.path_to_label_map_file))
+				return
 
 		if os.path.exists(self.model_file):
-		    rospy.logwarn('Found and verified : ' +  self.model_file)
-		    tar_file = tarfile.open(self.model_file)
+			rospy.logwarn('Found and verified : ' +  self.model_file)
+			tar_file = tarfile.open(self.model_file)
 		else:
-		    rospy.logwarn('The model is not available at the model database location: '+ self.model_file)
-		    rospy.logwarn('Attempting to download over internet:' + model_name + file_suffix) 
-		    opener = urllib.request.URLopener()
-		    opener.retrieve(DOWNLOAD_BASE + model_name + file_suffix, self.model_file)
-		    rospy.logwarn('Download Complete!\n')
-		    tar_file = tarfile.open(self.model_file)
+			rospy.logwarn('The model is not available at the model database location: '+ self.model_file)
+			rospy.logwarn('Attempting to download over internet:' + model_name + file_suffix) 
+			opener = urllib.request.URLopener()
+			opener.retrieve(DOWNLOAD_BASE + model_name + file_suffix, self.model_file)
+			rospy.logwarn('Download Complete!\n')
+			tar_file = tarfile.open(self.model_file)
 
 		# Getting the config yaml
 		for file in tar_file.getmembers():
@@ -106,6 +108,7 @@ class ObjectDetectionAPI():
 		self.num_classes = label_map_util.get_max_label_map_index(label_map)
 		categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=self.num_classes, use_display_name=True)
 		self.category_index = label_map_util.create_category_index(categories)
+		self.label_map_dict = label_map_util.get_label_map_dict(self.path_to_label_map_file, use_display_name=True)
 		#return detection_graph, category_index
 
 	def get_detection_graph_and_category_index(self, model_name = "ssd_inception_v2_coco_11_06_2017", path_to_the_model_database = "/TFM/model_database"):
@@ -176,37 +179,74 @@ class ObjectDetectionAPI():
 			# Minimum score threshold
 			minimum_threshold = 0.55 #default value is 0.5 (50%) used by the API
 
-			# Visualization of the results of a detection.
-			vis_util.visualize_boxes_and_labels_on_image_array(
-			image_np,
-			np.squeeze(boxes),
-			np.squeeze(classes).astype(np.int32),
-			np.squeeze(scores),
-			self.category_index,
-			use_normalized_coordinates=True,
-			min_score_thresh=minimum_threshold,
-			line_thickness=8)
-
 			# Extraction of the detection scores, classes, boxes and number
 			boxes = np.squeeze(boxes)
 			scores = np.squeeze(scores)
 			classes = np.squeeze(classes).astype(np.int32)
+
+			# This helps to set the list of desired class detection alone or all classes detection from the param server
+			class_selection = rospy.get_param('~desired_classes', ['all'])
+			if not (set(self.required_classes) == set(class_selection)):
+				self.required_classes = class_selection
+				self.desired_classes = class_selection
+				rospy.loginfo("{} class detection is set using param server".format(self.desired_classes))
+				for req_class in self.desired_classes:
+					if self.label_map_dict.get(req_class) is None and not req_class == 'all':
+						rospy.logwarn("The class {} is not found in the provided model lable map and is being removed from your desired class list".format(req_class))
+						rospy.logerr("The following classes are only present in the provided label map : \n {}".format(self.label_map_dict.keys()))
+						self.desired_classes.remove(req_class)
+
+				if not self.desired_classes:
+					rospy.logerr("May be the specified classes are not present in the label map, resetting it to all classes!!")
+					self.desired_classes = ['all']
+
+			indices = []
+			if not 'all' in self.desired_classes:
+				for class_index in self.desired_classes:
+					class_indices = np.intersect1d(np.where(classes == int(self.label_map_dict[class_index]))[0], np.where(scores > minimum_threshold)[0])
+					if not class_indices is None and not len(class_indices) == 0:
+						indices.extend(class_indices)
+
+				if not indices is None and not len(indices) == 0:
+					# Visualization of the results of a detection.
+					vis_util.visualize_boxes_and_labels_on_image_array(
+					image_np,
+					boxes[indices,:],
+					classes[indices],
+					scores[indices],
+					self.category_index,
+					use_normalized_coordinates=True,
+					min_score_thresh=minimum_threshold,
+					line_thickness=8)
+
+			else:
+				# Visualization of the results of a detection.
+				vis_util.visualize_boxes_and_labels_on_image_array(
+				image_np,
+				boxes,
+				classes,
+				scores,
+				self.category_index,
+				use_normalized_coordinates=True,
+				min_score_thresh=minimum_threshold,
+				line_thickness=8)
+				#indices = range(int(boxes.shape[0]))
+				indices = np.where(scores > minimum_threshold)[0]
 
 			detected_boxes = []
 			detected_classes = []
 			detected_scores = []
 			num_detected = 0
 			(self.im_width, self.im_height,_) = image_np.shape
-			for i in range(int(boxes.shape[0])):
-				if scores[i] > minimum_threshold:
-					num_detected = num_detected + 1
-					box = (boxes[i].tolist())
-					box[0] = int(np.ceil(box[0]*self.im_width))
-					box[2] = int(np.ceil(box[2]*self.im_width))
-					box[1] = int(np.ceil(box[1]*self.im_height))
-					box[3] = int(np.ceil(box[3]*self.im_height))
-					detected_boxes.append(tuple(box))
-					detected_classes.append(self.category_index.get(classes[i]).get('name').encode('utf8'))
-					detected_scores.append(scores[i])
+			for i in indices:
+				num_detected = num_detected + 1
+				box = (boxes[i].tolist())
+				box[0] = int(np.ceil(box[0]*self.im_width))
+				box[2] = int(np.ceil(box[2]*self.im_width))
+				box[1] = int(np.ceil(box[1]*self.im_height))
+				box[3] = int(np.ceil(box[3]*self.im_height))
+				detected_boxes.append(tuple(box))
+				detected_classes.append(self.category_index.get(classes[i]).get('name').encode('utf8'))
+				detected_scores.append(scores[i])
 
 			return image_np, num_detected, detected_classes, detected_scores, detected_boxes
