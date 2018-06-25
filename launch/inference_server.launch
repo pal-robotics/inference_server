@@ -10,7 +10,8 @@
 
 	<node name="inference_server" pkg="inference_server" type="inference_server_node.py" required="true" output="screen">
 		<param name="model_name" value="$(arg model_name)"/>
-        <param name="tf_models_path" value="$(arg tf_models_path)"/>
+		<param name="tf_models_path" value="$(arg tf_models_path)"/>
 		<param name="model_database_path" value="$(arg model_database_path)"/>
+		<rosparam param="desired_classes">['all']</rosparam>
 	</node>
 </launch>
