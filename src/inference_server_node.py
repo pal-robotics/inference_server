@@ -40,6 +40,7 @@ class InferenceServer():
                                             execute_cb=self.execute_cb,
                                             auto_start=False)
 
+		self.image_sub = rospy.Subscriber(self._sub_topic, CompressedImage, self.receiveImage, queue_size=1, buff_size=1000000000)
 		self.image_pub = rospy.Publisher(self._pub_topic, CompressedImage, queue_size=1, latch=True)
 		self.image = CompressedImage()
 		self.inference_input = []
@@ -62,21 +63,11 @@ class InferenceServer():
 		self.image = im_data
 		np_arr = np.fromstring(im_data.data, np.uint8)
 		self.inference_input = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
-		self.received_image = True
 
 	def execute_cb(self, goal):
 		rospy.loginfo("Goal Received!")
 
-		self.image_sub = rospy.Subscriber(self._sub_topic, CompressedImage, self.receiveImage, queue_size=1, buff_size=1000000000)
-		self.received_image = False
-		timeout = rospy.Time.now() + rospy.Duration(5,0)
-		while not self.received_image and (rospy.Time.now() < timeout):
-			pass
-		self.image_sub.unregister()
-		if not self.received_image:
-			rospy.logerr("No image received from the subscribed topic : %s before timeout!!", self._sub_topic)
-			self._as.set_aborted(text=str("No image received from the subscribed topic before timeout!!"))
-			return
+		start_time = rospy.Time.now()
 
 		result = inference_server.msg.InferenceResult()
 		self.inference_output, num_detected, detected_classes, detected_scores, detected_boxes = object_detection.detect(self.inference_input)
@@ -99,6 +90,10 @@ class InferenceServer():
 			box.width = (detected_boxes[i][3] - detected_boxes[i][1])
 			box.do_rectify = True
 			result.bounding_boxes.append(box)
+
+		total_inference_time = rospy.Time.now() - start_time
+		total_inference_time = total_inference_time.to_sec()
+		rospy.loginfo("The inference took {} seconds".format(total_inference_time));
 
 		try:
 			self._as.set_succeeded(result)
