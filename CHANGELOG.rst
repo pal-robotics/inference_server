@@ -2,8 +2,8 @@
 Changelog for package inference_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.1 (2018-08-09)
+------------------
 * Merge branch 'inference_time' into 'master'
   Inference_time and subscriber changes
   See merge request saikishor/inference_server!4
