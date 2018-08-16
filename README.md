@@ -5,6 +5,7 @@ This package is a wrapper between ROS and the [Tensorflow Object Detection API](
 ## Features:
    * ROS-TensorFlow Object Detection API Wrapper
    * Available as a ROS action_server
+   * ROS service to change the inference model
    * Desired class(es) selection with the parameter server
 
 ## ROS API
@@ -34,6 +35,11 @@ rosrun actionlib axclient.py /inference_server inference_server/InferenceAction 
 ```
 # For example, if we want to detect keyboard and bicycle alone:
 rosparam set /inference_server/desired_classes ['keyboard','bicycle']
+```
+  * Change the inference model using rosservice as shown:
+```
+rosservice call /inference_server/change_inference_model "model_name: 'ssd_inception_v2_coco_11_06_2017'
+reset_desired_classes_param: true"
 ```
   * Receive the result with the following fields from the inference of the image, in a chronological order of the detection score.
 	* image - Resultant image after inference from Object Detection API

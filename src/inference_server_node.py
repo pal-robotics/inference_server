@@ -13,6 +13,7 @@ from sensor_msgs.msg import Image, CompressedImage, RegionOfInterest
 from std_msgs.msg import String, Header
 import std_msgs.msg
 import inference_server.msg
+from inference_server.srv import *
 
 # System
 import sys
@@ -40,6 +41,8 @@ class InferenceServer():
                                             execute_cb=self.execute_cb,
                                             auto_start=False)
 
+		self.change_model_service = rospy.Service('~change_inference_model', ChangeInferenceModel, self.change_inference_model)
+
 		self.image_sub = rospy.Subscriber(self._sub_topic, CompressedImage, self.receiveImage, queue_size=1, buff_size=1000000000)
 		self.image_pub = rospy.Publisher(self._pub_topic, CompressedImage, queue_size=1, latch=True)
 		self.image = CompressedImage()
@@ -48,6 +51,7 @@ class InferenceServer():
 		self.firstInference()
 		self._as.start();
 		rospy.loginfo("Inference action server running!!")
+		rospy.loginfo("Change inference model server is online!")
 
 	def firstInference(self):
 		test_image = os.path.join(os.path.dirname(os.path.abspath(__file__)),"tiago_object_detection.jpg")
@@ -63,6 +67,16 @@ class InferenceServer():
 		self.image = im_data
 		np_arr = np.fromstring(im_data.data, np.uint8)
 		self.inference_input = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
+
+	def change_inference_model(self, req):
+		if req.model_name:
+			res = object_detection.update_model(model_name=req.model_name)
+			if res and req.reset_desired_classes_param:
+				rospy.set_param('~desired_classes', ['all'])
+				rospy.logwarn('The desired classes param has been reset to "all" for the new inference model')
+			return ChangeInferenceModelResponse(res)
+		else:
+			return ChangeInferenceModelResponse(False)
 
 	def execute_cb(self, goal):
 		rospy.loginfo("Goal Received!")
