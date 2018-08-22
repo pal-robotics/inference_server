@@ -172,8 +172,11 @@ class ObjectDetectionAPI():
 			# result image with boxes and labels on it.
 			image_np = data
 			#image_np = load_image_into_numpy_array(image)
+
 			# Expand dimensions since the model expects images to have shape: [1, None, None, 3]
-			image_np_expanded = np.expand_dims(image_np, axis=0)
+			# image_np[...,::-1] converts the BGR image to RGB image, as cv2's default color scheme is BGR
+			# The inference result from the BGR image wouldn't be as expected compared to RGB, RGB scheme is always preferred for inference
+			image_np_expanded = np.expand_dims(image_np[...,::-1], axis=0)
 			# Actual detection.
 			(boxes, scores, classes, num) = self.session.run(
 			[detection_boxes, detection_scores, detection_classes, num_detections],
