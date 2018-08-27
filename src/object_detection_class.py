@@ -111,10 +111,9 @@ class ObjectDetectionAPI():
 		self.label_map_dict = label_map_util.get_label_map_dict(self.path_to_label_map_file, use_display_name=True)
 		#return detection_graph, category_index
 
-	def get_detection_graph_and_category_index(self, model_name = "ssd_inception_v2_coco_11_06_2017", path_to_the_model_database = "/TFM/model_database"):
-		self.look_for_the_model(model_name, path_to_the_model_database)
-		self.detection_graph = tf.Graph()
-		with self.detection_graph.as_default():
+	def get_detection_graph_and_category_index(self, model_name, path_to_the_model_database):
+		detection_graph = tf.Graph()
+		with detection_graph.as_default():
 			od_graph_def = tf.GraphDef()
 			with tf.gfile.GFile(self.path_to_the_inference_graph, 'rb') as fid:
 				serialized_graph = fid.read()
@@ -123,27 +122,31 @@ class ObjectDetectionAPI():
 		label_map = label_map_util.load_labelmap(self.path_to_label_map_file)
 		self.num_classes = label_map_util.get_max_label_map_index(label_map)
 		categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=self.num_classes, use_display_name=True)
-		self.category_index = label_map_util.create_category_index(categories)
-		return detection_graph, category_index
+		category_index = label_map_util.create_category_index(categories)
+		label_map_dict = label_map_util.get_label_map_dict(self.path_to_label_map_file, use_display_name=True)
+		return detection_graph, category_index, label_map_dict
 
-	def update_model(self, model_name = "ssd_inception_v2_coco_11_06_2017", path_to_the_model_database = "/TFM/model_database"):
+	def update_model(self, model_name = "ssd_inception_v2_coco_11_06_2017", path_to_the_model_database = None):
 		self.model_name = model_name
-		self.path_to_the_model_database = path_to_the_model_database
+		if not (path_to_the_model_database is None):
+			self.path_to_the_model_database = path_to_the_model_database
 		self.look_for_the_model(self.model_name, self.path_to_the_model_database)
-		self.load_detection_graph_and_category_index()
-		self.create_new_session()
+		detection_graph, category_index, label_map_dict = self.get_detection_graph_and_category_index(self.model_name, self.path_to_the_model_database)
+		self.create_new_session(detection_graph, category_index, label_map_dict)
+		return True
 
 	def load_image_into_numpy_array(self, image):
-		(self.im_width, self.im_height, _) = image.shape
-		return np.array(image).reshape((im_height, im_width, 3)).astype(np.uint8)
-		#(im_width, im_height) = image.size
-		#return np.array(image.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
+		(im_width, im_height) = image.size
+		return np.array(image.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
+		#(im_width, im_height, _) = image.shape
+		#return np.array(image).reshape((im_height, im_width, 3)).astype(np.uint8)
 
-	def create_new_session(self, new_detection_graph, new_category_index):
+	def create_new_session(self, new_detection_graph, new_category_index, new_label_map_dict):
 		# the session need to be closed before, in order to release memory for other session
 		self.session.close()
 		self.detection_graph = new_detection_graph
 		self.category_index = new_category_index
+		self.label_map_dict = new_label_map_dict
 		self.session = tf.Session(config=self.config, graph = self.detection_graph)
 		rospy.loginfo('Tensorflow new inference session successfully created!!');
 
@@ -168,7 +171,7 @@ class ObjectDetectionAPI():
 			# the array based representation of the image data into the variable, this will be used later in order to prepare the
 			# result image with boxes and labels on it.
 			image_np = data
-	#		image_np = load_image_into_numpy_array(image)
+			#image_np = load_image_into_numpy_array(image)
 			# Expand dimensions since the model expects images to have shape: [1, None, None, 3]
 			image_np_expanded = np.expand_dims(image_np, axis=0)
 			# Actual detection.
@@ -203,7 +206,16 @@ class ObjectDetectionAPI():
 			indices = []
 			if not 'all' in self.desired_classes:
 				for class_index in self.desired_classes:
-					class_indices = np.intersect1d(np.where(classes == int(self.label_map_dict[class_index]))[0], np.where(scores > minimum_threshold)[0])
+					try:
+						class_indices = np.intersect1d(np.where(classes == int(self.label_map_dict[class_index]))[0], np.where(scores > minimum_threshold)[0])
+					except KeyError, e:
+						rospy.logwarn("KeyError for class {} - The desired class might not exist in the new label map".format(class_index))
+						rospy.logwarn("Resetting the desired_classes param to ['all']")
+						rospy.set_param('~desired_classes', ['all'])
+						indices = range(0, len(self.label_map_dict))
+						break
+					except:
+						raise
 					if not class_indices is None and not len(class_indices) == 0:
 						indices.extend(class_indices)
 

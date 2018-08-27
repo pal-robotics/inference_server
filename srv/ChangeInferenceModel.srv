@@ -1,0 +1,4 @@
+string model_name
+bool reset_desired_classes_param
+---
+bool status
