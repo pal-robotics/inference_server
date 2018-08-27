@@ -5,7 +5,6 @@ import rospy
 import actionlib
 
 # OpenCV for images
-from cv_bridge import CvBridge, CvBridgeError
 import cv2
 
 # rosmsg
@@ -16,7 +15,6 @@ import inference_server.msg
 from inference_server.srv import *
 
 # System
-import sys
 import os
 
 # Tensorflow and numpy
@@ -26,8 +24,6 @@ import numpy as np
 # object detection library
 from object_detection_class import ObjectDetectionAPI
 from PIL import Image
-
-bridge = CvBridge()
 
 cv2.CV_LOAD_IMAGE_COLOR = 1
 
