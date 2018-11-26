@@ -2,6 +2,25 @@
 Changelog for package inference_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'optional_image' into 'master'
+  added an optional image as an input to Inference action
+  See merge request saikishor/inference_server!8
+* added an optional image as an input to Inference action
+* Merge branch 'fixing_cv_bgr' into 'master'
+  Fixing CV Image BGR Issue
+  See merge request saikishor/inference_server!7
+* removing unused cvbridge and sys headers
+  (cherry picked from commit 110a3ee9e6616692199fff438190ff4b609e13aa)
+* fixing BGR issue with cv2
+  (cherry picked from commit 15e362f962b04bb2ad28cac0b125e968c638d395)
+* Merge branch 'change_model_service' into 'master'
+  add service to update with new inference model
+  See merge request saikishor/inference_server!5
+* add service to update with new inference model
+* Contributors: Sai Kishor Kothakota, Victor Lopez, saikishor
+
 0.0.1 (2018-08-09)
 ------------------
 * Merge branch 'inference_time' into 'master'
