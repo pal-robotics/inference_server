@@ -1,3 +1,4 @@
+sensor_msgs/CompressedImage input_image
 ---
 sensor_msgs/CompressedImage image
 int16 num_detections

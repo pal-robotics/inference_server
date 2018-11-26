@@ -80,7 +80,12 @@ class InferenceServer():
 		start_time = rospy.Time.now()
 
 		result = inference_server.msg.InferenceResult()
-		self.inference_output, num_detected, detected_classes, detected_scores, detected_boxes = object_detection.detect(self.inference_input)
+		if not goal.input_image.data:
+			self.inference_output, num_detected, detected_classes, detected_scores, detected_boxes = object_detection.detect(self.inference_input)
+		else:
+			np_arr = np.fromstring(goal.input_image.data, np.uint8)
+			goal_inference_input = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
+			self.inference_output, num_detected, detected_classes, detected_scores, detected_boxes = object_detection.detect(goal_inference_input)
 
 		self.inference_image = CompressedImage()
 		self.inference_image.header.stamp = rospy.Time.now()
