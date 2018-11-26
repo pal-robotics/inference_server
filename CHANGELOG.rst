@@ -2,8 +2,8 @@
 Changelog for package inference_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.2 (2018-11-26)
+------------------
 * Merge branch 'optional_image' into 'master'
   added an optional image as an input to Inference action
   See merge request saikishor/inference_server!8
